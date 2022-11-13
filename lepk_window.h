@@ -1,3 +1,57 @@
+/* Version: 1.1 */
+
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2022 Linus Erik Pontus Kåreblom
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
+ * Windowing, single header library.
+ * Currently supporting windows and linux, with xcb.
+ *
+ * Add:
+ *     #define LEPK_WINDOW_IMPLEMENTATION
+ * in one C or C++ file, before including this file, to create the implementation.
+ * 
+ * For vulkan support add:
+ *     #define LEPK_WINDOW_VULKAN
+ * before including this file. Then the function 'lepk_window_get_surface' will be available.
+ *
+ * When compiling, link to xcb if your compiling for linux.
+ */
+
+/*
+ * === Documentation ===
+ * Usage:
+ * LepkWindow *window = lepk_window_create(800, 600, "Window", true);
+ *  
+ * while (lepk_window_is_open(window)) {
+ *     // Do graphics stuff.
+ *     lepk_window_poll_events(window);
+ * }
+ *
+ * lepk_window_destroy(window);
+ */
+
 #ifndef LEPK_WINDOW_H
 #define LEPK_WINDOW_H
 
@@ -9,11 +63,18 @@
 #define LEPKWINDOW extern
 #endif /* LEPK_WINDOW_STATIC */
 
+/*
+ * Window object. Definition is based on OS.
+ */
 typedef struct LepkWindow LepkWindow;
 
+/* Create window. */
 LEPKWINDOW LepkWindow *lepk_window_create(int width, int height, const char *title, bool resizable);
+/* Free window. */
 LEPKWINDOW void lepk_window_destroy(LepkWindow *window);
+/* Check if window is still open or a close event has happened. */
 LEPKWINDOW bool lepk_window_is_open(const LepkWindow *window);
+/* Poll window events. */
 LEPKWINDOW void lepk_window_poll_events(LepkWindow *window);
 
 #ifdef LEPK_WINDOW_VULKAN
@@ -24,6 +85,7 @@ LEPKWINDOW void lepk_window_poll_events(LepkWindow *window);
 #define VK_UES_PLATFORM_WIN32_KHR
 #endif /* _WIN32 */
 #include <vulkan/vulkan.h>
+/* Get vulkan surface for window. */
 LEPKWINDOW VkSurfaceKHR lepk_window_get_surface(const LepkWindow *window, VkInstance instance);
 #endif /* LEPK_WINDOW_VULKAN */
 
@@ -154,6 +216,7 @@ LepkWindow *lepk_window_create(int width, int height, const char *title, bool re
 
 void lepk_window_destroy(LepkWindow *window) {
 	xcb_destroy_window(window->connection, window->window);
+	free(window);
 }
 
 bool lepk_window_is_open(const LepkWindow *window) {
@@ -281,6 +344,7 @@ LepkWindow *lepk_window_create(int width, int height, const char *title, bool re
 
 void lepk_window_destroy(LepkWindow *window) {
 	DestroyWindow(window->window);
+	free(window);
 }
 
 bool lepk_window_is_open(const LepkWindow *window) {
