@@ -52,6 +52,13 @@
  * lepk_window_destroy(window);
  */
 
+/*
+ * TODO:
+ * 1. Add keyboard input handling.
+ * 2. Add mouse input handling.
+ * 3. Add resize callback.
+ */
+
 #ifndef LEPK_WINDOW_H
 #define LEPK_WINDOW_H
 
