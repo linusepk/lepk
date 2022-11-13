@@ -73,7 +73,7 @@ LepkWindow *lepk_window_create(int width, int height, const char *title, bool re
 		XCB_COPY_FROM_PARENT,
 		window->window,
 		window->screen->root,
-		0, 0, // Position
+		0, 0, /* Position */
 		width, height,
 		0,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
@@ -145,7 +145,7 @@ LepkWindow *lepk_window_create(int width, int height, const char *title, bool re
 
 	xcb_change_property(window->connection, XCB_PROP_MODE_REPLACE, window->window, wm_protocols_reply->atom, 4, 32, 1, &wm_delete_reply->atom);
 
-	// Send window to the X server
+	/* Send window to the X server. */
 	xcb_map_window(window->connection, window->window);
 	xcb_flush(window->connection);
 
@@ -205,6 +205,117 @@ VkSurfaceKHR lepk_window_get_surface(const LepkWindow *window, VkInstance instan
  * Windows
  */
 #ifdef _WIN32
+
+#include <Windows.h>
+
+struct LepkWindow {
+	HINSTANCE instance;
+	HWND window;
+	bool is_open;
+};
+
+static LRESULT CALLBACK lepk__process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) {
+	switch (msg) {
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			return 0;
+		default:
+			break;
+	}
+
+	return DefWindowProcA(hwnd, msg, w_param, l_param);
+}
+
+LepkWindow *lepk_window_create(int width, int height, const char *title, bool resizable) {
+	LepkWindow *window = malloc(sizeof(LepkWindow));
+	window->is_open = true;
+
+	/* Get instance. */
+	window->instance = GetModuleHandleA(0);
+
+	const char *class_name = "lepk_window_class";
+	WNDCLASSA wc = {0};
+	wc.lpfnWndProc = lepk__process_message;
+	wc.hInstance = window->instance;
+	wx.lpszClassName = class_name;
+	wc.hCuesor = LoadCursor(NULL, IDC_ARROW);
+
+	if (!RegisterClassA(&wc)) {
+		return NULL;
+	}
+
+	DWORD style = WS_OVERLAPPED | WS_SYS_MENU | WS_CAPTION | WS_MINIMIZEBOX;
+	if (resizable) {
+		style |= WS_MAXIMIZEBOX;
+		style |= WS_THICKFRAME;
+	}
+
+	/* Correct window sizing. */
+	RECT border_rect = {0};
+	AdjustWindowRectEx(&border_rect, style, 0, 0);
+	int border_margin_x = border_rect.right - border_rect.left;
+	int border_margin_y = border_rect.bottom - border_rect.top;
+
+	/* Create window. */
+	window->window = CreateWindowExA(
+		0,
+		class_name,
+		title,
+		style,
+		CW_USEDEFAULT, CW_USEDEFAULT, /* Position */
+		width + border_margin_x, height + border_margin_y,
+		0,
+		0,
+		window->instance,
+		0
+	);
+	if (window->window == NULL) {
+		return NULL;
+	}
+
+	/* Present window. */
+	ShowWindow(window->window, SW_SHOW);
+
+	return window;
+}
+
+void lepk_window_destroy(LepkWindow *window) {
+	DestroyWindow(window->window);
+}
+
+bool lepk_window_is_open(const LepkWindow *window) {
+	return window->is_open;
+}
+
+void lepk_window_poll_events(LepkWindow *window) {
+	MSG msg = {0};
+	while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+		if (msg.message == WM_QUIT) {
+			window->closed = true;
+		} else {
+			TranslateMessage(&msg);
+			DispatchMessageA(&msg);
+		}
+	}
+}
+
+VkSurfaceKHR lepk_window_get_surface(const LepkWindow *window, VkInstance instance) {
+	VkSurfaceKHR surface;
+
+	VkWin32SurfaceCreateInfoKHR surface_create_info = {0};
+	surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	surface_create_info.pNext = NULL;
+	surface_create_info.flags = 0;
+	surface_create_info.hinstance = window->instance;
+	surface_create_info.hwnd = window->window;
+
+	if (vkCreateWin32SurfaceKHR(instance, &surface_create_info, NULL, &surface) != VK_SUCCESS) {
+		return NULL;
+	}
+
+	return surface;
+}
+
 #endif /* _WIN32 */
 
 #endif /* LEPK_WINDOW_IMPLEMENTATION */
