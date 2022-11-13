@@ -1,5 +1,5 @@
 # lepk
-Lepk is my collection of single header libraries. So basically a ripoff of [nothings stb](https://github.com/nothing/stb).
+Lepk is my collection of single header libraries. So basically a ripoff of [nothings stb](https://github.com/nothings/stb).
 
 Every library has a test built into the header. These tests are ran with test.c and a Makefile.
 
