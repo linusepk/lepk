@@ -7,7 +7,7 @@ ifeq ($(OS),Windows_NT)
 else
 	UNAME := $(shell uname -s)
 	ifeq ($(UNAME),Linux)
-		LFLAGS += -lxcb -lvulkan
+		LFLAGS += lX11 -lX11-xcb -lxcb -lvulkan
 	endif
 endif
 

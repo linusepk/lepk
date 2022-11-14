@@ -9,4 +9,4 @@ Everything is written in pedantic C99.
 | Library | Version | Usage |
 | - | - | - |
 | [lepk_da.h](lepk_da.h) | 1.0 | Dynamic arrays. | 
-| [lepk_window.h](lepk_window.h) | 1.1 | Windowing library. |
+| [lepk_window.h](lepk_window.h) | 1.2 | Windowing library. |
