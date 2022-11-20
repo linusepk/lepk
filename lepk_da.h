@@ -54,8 +54,10 @@
 
 #ifdef LEPK_DA_STATIC
 #define LEPKDA static
+#define LEPKDAIMPL static
 #else /* LEPK_DA_STATIC */
 #define LEPKDA extern
+#define LEPKDAIMPL
 #endif /* LEPK_DA_STATIC */
 
 /*
@@ -117,7 +119,7 @@ typedef unsigned char Lepk__U8;
 #define LEPK_DA_START_CAP 8
 #endif /* LEPK_DA_START_CAP */
 
-void *lepk_da_create(unsigned long size) {
+LEPKDAIMPL void *lepk_da_create(unsigned long size) {
 	assert(size != 0 && "Size can't be 0.");
 
 	Lepk__DaHeader *head = head = malloc(size + sizeof(Lepk__DaHeader) * LEPK_DA_START_CAP);
@@ -128,17 +130,17 @@ void *lepk_da_create(unsigned long size) {
 	return LEPK__DA_FROM_HEAD(head);
 }
 
-void lepk_da_destroy(void *da) {
+LEPKDAIMPL void lepk_da_destroy(void *da) {
 	assert(da != NULL && "Dynamic array can't be NULL.");
 	free(LEPK__HEAD_FROM_DA(da));
 }
 
-unsigned long lepk_da_count(void *da) {
+LEPKDAIMPL unsigned long lepk_da_count(void *da) {
 	assert(da != NULL && "Dyanmic array can't be NULL.");
 	return LEPK__HEAD_FROM_DA(da)->count;
 }
 
-void lepk__da_insert(void **da, const void *data, unsigned int index) {
+LEPKDAIMPL void lepk__da_insert(void **da, const void *data, unsigned int index) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -171,7 +173,7 @@ void lepk__da_insert(void **da, const void *data, unsigned int index) {
 	head->count++;
 }
 
-void lepk__da_remove(void **da, unsigned int index) {
+LEPKDAIMPL void lepk__da_remove(void **da, unsigned int index) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -202,7 +204,7 @@ void lepk__da_remove(void **da, unsigned int index) {
 	head->count--;
 }
 
-void lepk__da_insert_fast(void **da, const void *data, unsigned int index) {
+LEPKDAIMPL void lepk__da_insert_fast(void **da, const void *data, unsigned int index) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -235,7 +237,7 @@ void lepk__da_insert_fast(void **da, const void *data, unsigned int index) {
 	head->count++;
 }
 
-void lepk__da_remove_fast(void **da, unsigned int index) {
+LEPKDAIMPL void lepk__da_remove_fast(void **da, unsigned int index) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -266,14 +268,14 @@ void lepk__da_remove_fast(void **da, unsigned int index) {
 	head->count--;
 }
 
-void lepk__da_insert_array(void **da, const void *array, unsigned int array_length, unsigned int index) {
+LEPKDAIMPL void lepk__da_insert_array(void **da, const void *array, unsigned int array_length, unsigned int index) {
 	Lepk__DaHeader *head = LEPK__HEAD_FROM_DA(*da);
 	for (unsigned int i = 0; i < array_length; i++) {
 		lepk__da_insert(da, (unsigned char *) array + i * head->size, index + i);
 	}
 }
 
-void lepk__da_push_array(void **da, const void *array, unsigned int array_length) {
+LEPKDAIMPL void lepk__da_push_array(void **da, const void *array, unsigned int array_length) {
 	Lepk__DaHeader *head = LEPK__HEAD_FROM_DA(*da);
 	for (unsigned int i = 0; i < array_length; i++) {
 		lepk__da_insert_fast(da, (unsigned char *) array + i * head->size, lepk_da_count(*da));
