@@ -1,4 +1,4 @@
-/* Version: 1.0 */
+/* Version: 1.1 */
 
 /*
  * MIT License
@@ -81,20 +81,26 @@ LEPKDA unsigned long lepk_da_count(void *da);
 /* Insert data into dynamic array at index, preserving insertion order. */
 LEPKDA void lepk__da_insert(void **da, const void *data, unsigned int index);
 /* Remove item from dynamic array at index, preserving insertion order. */
-LEPKDA void lepk__da_remove(void **da, void *output, unsigned int index);
+LEPKDA void lepk__da_remove(void **da, unsigned int index);
 /* Insert data into dynamic array at index, destroying insertion order. Copy data from index to output. */
 LEPKDA void lepk__da_insert_fast(void **da, const void *data, unsigned int index);
 /* Remove item from dynamic array at index, destroying insertion order. Copy data from index to output. */
-LEPKDA void lepk__da_remove_fast(void **da, void *output, unsigned int index);
+LEPKDA void lepk__da_remove_fast(void **da, unsigned int index);
+/* Insert a whole array at a time. */
+LEPKDA void lepk__da_insert_array(void **da, const void *array, unsigned int array_length, unsigned int index);
+/* Push a whole array at a time to the end of the dyanmic array. */
+LEPKDA void lepk__da_push_array(void **da, const void *array, unsigned int array_length);
 
-#define lepk_da_insert(da, data, index) do {__typeof__(data) lepk__temp_data = data; lepk__da_insert((void **) &da, &lepk__temp_data, index);} while (0)
-#define lepk_da_remove(da, output, index) do {lepk__da_remove((void **) &da, output, index);} while (0)
-#define lepk_da_insert_fast(da, data, index) do {__typeof__(data) lepk__temp_data = data; lepk__da_insert_fast((void **) &da, &lepk__temp_data, index);} while (0)
-#define lepk_da_remove_fast(da, output, index) do {lepk__da_remove_fast((void **) &da, output, index);} while (0)
+#define lepk_da_insert(da, data, index) do {__typeof__((data)) lepk__temp_data = (data); lepk__da_insert((void **) &(da), &lepk__temp_data, (index));} while (0)
+#define lepk_da_remove(da, index) do {lepk__da_remove((void **) &(da), (index));} while (0)
+#define lepk_da_insert_fast(da, data, index) do {__typeof__((data)) lepk__temp_data = (data); lepk__da_insert_fast((void **) &(da), &lepk__temp_data, (index));} while (0)
+#define lepk_da_remove_fast(da, index) do {lepk__da_remove_fast((void **) &(da), (index));} while (0)
 /* Insert data at end of dynamic array. */
-#define lepk_da_push(da, data) lepk_da_insert_fast(da, data, lepk_da_count(da))
+#define lepk_da_push(da, data) lepk_da_insert_fast((da), (data), lepk_da_count((da)))
 /* Remove last item of dynamic array. */
-#define lepk_da_pop(da, output) lepk_da_remove_fast(da, output, lepk_da_count(da))
+#define lepk_da_pop(da) lepk_da_remove_fast(da, lepk_da_count(da))
+#define lepk_da_insert_array(da, array, array_length, index) do {lepk__da_insert_array((void **) &(da), (array), (array_length), (index));} while (0)
+#define lepk_da_push_array(da, array, array_length) do {lepk__da_push_array((void **) &(da), (array), (array_length));} while (0)
 
 #ifdef LEPK_DA_IMPLEMENTATION
 
@@ -165,7 +171,7 @@ void lepk__da_insert(void **da, const void *data, unsigned int index) {
 	head->count++;
 }
 
-void lepk__da_remove(void **da, void *output, unsigned int index) {
+void lepk__da_remove(void **da, unsigned int index) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -177,10 +183,6 @@ void lepk__da_remove(void **da, void *output, unsigned int index) {
 	}
 
 	Lepk__U8 *ptr_da = *da;
-
-	if (output != NULL) {
-		memcpy(output, ptr_da + index * head->size, head->size);
-	}
 
 	/* Resize */
 	if (head->count == head->cap / 2 && head->cap != LEPK_DA_START_CAP) {
@@ -233,7 +235,7 @@ void lepk__da_insert_fast(void **da, const void *data, unsigned int index) {
 	head->count++;
 }
 
-void lepk__da_remove_fast(void **da, void *output, unsigned int index) {
+void lepk__da_remove_fast(void **da, unsigned int index) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -245,10 +247,6 @@ void lepk__da_remove_fast(void **da, void *output, unsigned int index) {
 	}
 
 	Lepk__U8 *ptr_da = *da;
-
-	if (output != NULL) {
-		memcpy(output, ptr_da + index * head->size, head->size);
-	}
 
 	/* Resize */
 	if (head->count == head->cap / 2 && head->cap != LEPK_DA_START_CAP) {
@@ -268,11 +266,26 @@ void lepk__da_remove_fast(void **da, void *output, unsigned int index) {
 	head->count--;
 }
 
+void lepk__da_insert_array(void **da, const void *array, unsigned int array_length, unsigned int index) {
+	Lepk__DaHeader *head = LEPK__HEAD_FROM_DA(*da);
+	for (unsigned int i = 0; i < array_length; i++) {
+		lepk__da_insert(da, (unsigned char *) array + i * head->size, index + i);
+	}
+}
+
+void lepk__da_push_array(void **da, const void *array, unsigned int array_length) {
+	Lepk__DaHeader *head = LEPK__HEAD_FROM_DA(*da);
+	for (unsigned int i = 0; i < array_length; i++) {
+		lepk__da_insert_fast(da, (unsigned char *) array + i * head->size, lepk_da_count(*da));
+	}
+}
+
 #endif /* LEPK_DA_IMPLEMENTATION */
 
 #ifdef LEPK_DA_TEST
 
 #include <string.h>
+#include <assert.h>
 
 static void lepk_da_test(void) {
 	int *da = lepk_da_create(sizeof(int));
@@ -296,21 +309,33 @@ static void lepk_da_test(void) {
 	}
 	{
 		int expected[3] = { 4, 3, 1 };
-		lepk_da_remove(da, NULL, 0);
+		lepk_da_remove(da, 0);
 		assert(memcmp(da, expected, 3 * sizeof(int)) == 0 && "lepk_da_remove failed.");
 	}
 	{
 		int expected[2] = { 1, 3 };
-		lepk_da_remove_fast(da, NULL, 0);
+		lepk_da_remove_fast(da, 0);
 		assert(memcmp(da, expected, 2 * sizeof(int)) == 0 && "lepk_da_remove_fast failed.");
 	}
 	{
 		int expected[1] = { 1 };
-		lepk_da_pop(da, NULL);
+		lepk_da_pop(da);
 		assert(memcmp(da, expected, 1 * sizeof(int)) == 0 && "lepk_da_pop failed.");
 	}
+	{
+		int expected[3] = { 2, 3, 1 };
+		int arr[2] = { 2, 3 };
+		lepk_da_insert_array(da, arr, 2, 0);
+		assert(memcmp(da, expected, 3 * sizeof(int)) == 0 && "lepk_da_insert_array failed.");
+	}
+	{
+		int expected[6] = { 2, 3, 1, 4, 5, 6 };
+		int arr[3] = { 4, 5, 6 };
+		lepk_da_push_array(da, arr, 3);
+		assert(memcmp(da, expected, 6 * sizeof(int)) == 0 && "lepk_da_push_array failed.");
+	}
 
-	assert(lepk_da_count(da) == 1 && "lepk_da_count failed.");
+	assert(lepk_da_count(da) == 6 && "lepk_da_count failed.");
 	lepk_da_destroy(da);
 }
 
