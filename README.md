@@ -10,3 +10,20 @@ Everything is written in pedantic C99.
 | - | - | - |
 | [lepk_da.h](lepk_da.h) | 1.0 | Dynamic arrays. | 
 | [lepk_window.h](lepk_window.h) | 1.2 | Windowing library. |
+| [lepk_type.h](lepk_type.h) | 1.0 | Generic types and boolean operations. |
+| [lepk_file.h](lepk_file.h) | 1.0 | Interacting with the filesystem. |
+
+## Lepkc
+Lepkc or the lepk compiler is a compiler which takes a header and a source file, combines them into a single header.
+
+### Installation
+Installing lepkc will copy the compiled binary to /usr/bin.
+```shell
+$ make lepkc_install
+```
+
+### Compile
+Compiling will produce a binary in the current directory.
+```shell
+$ make lepkc
+```
