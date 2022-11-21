@@ -26,6 +26,7 @@
 
 /*
  * Compile one header file and a source file into a single header file.
+ * Note: Make sure the first "#include" in the source file is the include for the header since this line will be removed.
  *
  * Usage:
  * lepkc [SOURCE] [HEADER] [DEFINE] [OUTPUT]
@@ -58,14 +59,25 @@ static void usage(const char *program) {
 	exit(1);
 }
 
+static void write_impl(const char *output_filepath, const char *source, const char *def, U32 first_header, U32 first_header_end) {
+		lepk_file_append(output_filepath, "#ifdef ", 7, LEPK_FILE_MODE_BINARY);
+		lepk_file_append(output_filepath, def, strlen(def), LEPK_FILE_MODE_BINARY);
+		lepk_file_append(output_filepath, "\n", 1, LEPK_FILE_MODE_BINARY);
+
+		lepk_file_append(output_filepath, source, first_header, LEPK_FILE_MODE_BINARY);
+		lepk_file_append(output_filepath, source + first_header_end, strlen(source + first_header_end), LEPK_FILE_MODE_BINARY);
+
+		lepk_file_append(output_filepath, "#endif /*", 9, LEPK_FILE_MODE_BINARY);
+		lepk_file_append(output_filepath, def, strlen(def), LEPK_FILE_MODE_BINARY);
+		lepk_file_append(output_filepath, "*/", 2, LEPK_FILE_MODE_BINARY);
+		lepk_file_append(output_filepath, "\n", 1, LEPK_FILE_MODE_BINARY);
+}
+
 I32 main(I32 argc, char **argv) {
 	/* No arguments. */
 	if (argc != 5) {
 		usage(argv[0]);
 	}
-
-	/* Content of final header file. */
-	char *final = lepk_da_create(sizeof(char));
 
 	const char *source_filepath       = argv[1];
 	const char *header_filepath       = argv[2];
@@ -93,53 +105,35 @@ I32 main(I32 argc, char **argv) {
 		}
 	}
 
-	/* Create final string. */
+
+	/* Find the first "#include" which should be the header. */
+	I32 first_header = -1;
+	U32 first_header_end = 0;
+	for (U32 i = 0; source[i] != '\0'; i++) {
+		if (strncmp(source + i, "#include", 8) == 0 && first_header == -1) {
+			first_header = i;
+			for (; source[i] != '\n'; i++);
+			for (; source[i] == '\n'; i++);
+			first_header_end = i;
+			break;
+		}
+	}
+
+	/* Create final file. */
 	if (is_pragma) {
-		/* Header. */
-		lepk_da_push_array(final, header, strlen(header));
+		lepk_file_write(output_filepath, header, strlen(header), LEPK_FILE_MODE_BINARY);
 
-		/* Space between definition and implementation. */
-		lepk_da_push(final, '\n');
-
-		/* "#ifdef" implementation gurad. */
-		lepk_da_push_array(final, "#ifdef ", 7);
-		lepk_da_push_array(final, implementation_define, strlen(implementation_define));
-		lepk_da_push(final, '\n');
-
-		/* Implemenation. */
-		lepk_da_push_array(final, source, strlen(source));
-
-		/* "#endif" of implementation gurad. */
-		lepk_da_push_array(final, "#endif /*", 9);
-		lepk_da_push_array(final, implementation_define, strlen(implementation_define));
-		lepk_da_push_array(final, " */", 3);
-		lepk_da_push(final, '\n');
+		write_impl(output_filepath, source, implementation_define, first_header, first_header_end);
 	} else {
-		/* Header until last "#endif". */
-		lepk_da_push_array(final, header, last_endif);
+		lepk_file_write(output_filepath, header, last_endif, LEPK_FILE_MODE_BINARY);
 
-		/* "#ifdef" implementation gurad. */
-		lepk_da_push_array(final, "#ifdef ", 7);
-		lepk_da_push_array(final, implementation_define, strlen(implementation_define));
-		lepk_da_push(final, '\n');
+		write_impl(output_filepath, source, implementation_define, first_header, first_header_end);
 
-		/* Implemenation. */
-		lepk_da_push_array(final, source, strlen(source));
-
-		/* "#endif" of implementation gurad. */
-		lepk_da_push_array(final, "#endif /*", 9);
-		lepk_da_push_array(final, implementation_define, strlen(implementation_define));
-		lepk_da_push_array(final, " */", 3);
-		lepk_da_push(final, '\n');
-
-		/* End of header. */
-		lepk_da_push_array(final, header + last_endif, strlen(header) - last_endif);
+		lepk_file_append(output_filepath, header + last_endif, strlen(header + last_endif), LEPK_FILE_MODE_BINARY);
 	}
 
 	free(source);
 	free(header);
-
-	lepk_file_write(output_filepath, final, lepk_da_count(final), LEPK_FILE_MODE_BINARY);
 
 	return 0;
 }
