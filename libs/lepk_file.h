@@ -35,22 +35,66 @@
 #define LEPKFILEIMPL
 #endif /* LEPK_FILE_STATIC */
 
+#include <stdbool.h>
+
 typedef enum {
 	LEPK_FILE_MODE_NORMAL,
 	LEPK_FILE_MODE_BINARY,
 } LepkFileMode;
 
-LEPKFILE char *lepk_file_read(const char *filepath);
-LEPKFILE int lepk_file_write(const char *filepath, const char *content, unsigned long length, LepkFileMode mode);
-LEPKFILE int lepk_file_append(const char *filepath, const char *content, unsigned long length, LepkFileMode mode);
+typedef enum {
+	LEPK_FILE_STATUS_OK,
+	LEPK_FILE_STATUS_UNABLE_TO_OPEN_CREATE,
+	LEPK_FILE_STATUS_OUT_OF_MEMORY,
+	LEPK_FILE_STATUS_REMOVE_FAILED,
+} LepkFileStatus;
 
-#ifdef LEPK_FILE_IMPLEMENATION
+LEPKFILE char *lepk_file_read(const char *filepath, LepkFileStatus *status);
+LEPKFILE LepkFileStatus lepk_file_write(const char *filepath, const char *content, unsigned long length, LepkFileMode mode);
+LEPKFILE LepkFileStatus lepk_file_append(const char *filepath, const char *content, unsigned long length, LepkFileMode mode);
+LEPKFILE LepkFileStatus lepk_file_create(const char *filepath);
+LEPKFILE LepkFileStatus lepk_file_remove(const char *filepath);
+LEPKFILE bool lepk_file_exists(const char *filepath);
+
+#ifdef LEPK_FILE_TEST
+
+#include <malloc.h>
+#include <assert.h> 
+
+static void lepk_file_test(void) {
+	LepkFileStatus status;
+
+	status = lepk_file_create("file_test.txt");
+	assert(status == LEPK_FILE_STATUS_OK && "lepk_file_create failed.");
+
+	bool exists = lepk_file_exists("file_test.txt");
+	assert(exists && "lepk_file_exists failed.");
+
+	status = lepk_file_write("file_test.txt", "Hello World!", 12, LEPK_FILE_MODE_BINARY);
+	assert(status == LEPK_FILE_STATUS_OK && "lepk_file_write failed.");
+
+	status = lepk_file_append("file_test.txt", "World Hello!", 12, LEPK_FILE_MODE_BINARY);
+	assert(status == LEPK_FILE_STATUS_OK && "lepk_file_append failed.");
+
+	char *content = lepk_file_read("file_test.txt", &status);
+	assert(strcmp(content, "Hello World!World Hello!") == 0 && "lepk_file_read failed!");
+
+	lepk_file_remove("file_test.txt");
+	exists = lepk_file_exists("file_test.txt");
+	assert(!exists && "lepk_file_remove failed.");
+}
+
+#endif /* LEPK_FILE_TEST */
+#ifdef LEPK_FILE_IMPLEMENTATION
 #include <stdio.h>
 #include <malloc.h>
 
-LEPKFILEIMPL char *lepk_file_read(const char *filepath) {
+#define LEPK__FILE_SET_STATUS(p, s) do {if ((p)) { *(p) = (s); }} while (0)
+
+LEPKFILEIMPL char *lepk_file_read(const char *filepath, LepkFileStatus *status) {
 	FILE *f = fopen(filepath, "rb");
 	if (f == NULL) {
+		LEPK__FILE_SET_STATUS(status, LEPK_FILE_STATUS_UNABLE_TO_OPEN_CREATE);
 		return NULL;
 	}
 
@@ -60,6 +104,7 @@ LEPKFILEIMPL char *lepk_file_read(const char *filepath) {
 
 	char *buffer = malloc(length + 1);
 	if (buffer == NULL) {
+		LEPK__FILE_SET_STATUS(status, LEPK_FILE_STATUS_OUT_OF_MEMORY);
 		return NULL;
 	}
 
@@ -68,33 +113,54 @@ LEPKFILEIMPL char *lepk_file_read(const char *filepath) {
 
 	fclose(f);
 
+	LEPK__FILE_SET_STATUS(status, LEPK_FILE_STATUS_OK);
 	return buffer;
 }
 
-LEPKFILEIMPL int lepk_file_write(const char *filepath, const char *content, unsigned long length, LepkFileMode mode) {
+LEPKFILEIMPL LepkFileStatus lepk_file_write(const char *filepath, const char *content, unsigned long length, LepkFileMode mode) {
 	char *str_mode = mode == LEPK_FILE_MODE_NORMAL ? "w" : "wb";
 	FILE *f = fopen(filepath, str_mode);
 	if (f == NULL) {
-		return 1;
+		return LEPK_FILE_STATUS_UNABLE_TO_OPEN_CREATE;
 	}
 
 	fwrite(content, length, 1, f);
 	fclose(f);
 
-	return 0;
+	return LEPK_FILE_STATUS_OK;
 }
 
-LEPKFILEIMPL int lepk_file_append(const char *filepath, const char *content, unsigned long length, LepkFileMode mode) {
+LEPKFILEIMPL LepkFileStatus lepk_file_append(const char *filepath, const char *content, unsigned long length, LepkFileMode mode) {
 	char *str_mode = mode == LEPK_FILE_MODE_NORMAL ? "a" : "ab";
 	FILE *f = fopen(filepath, str_mode);
 	if (f == NULL) {
-		return 1;
+		return LEPK_FILE_STATUS_UNABLE_TO_OPEN_CREATE;
 	}
 
 	fwrite(content, length, 1, f);
 	fclose(f);
 
-	return 0;
+	return LEPK_FILE_STATUS_OK;
 }
-#endif /*LEPK_FILE_IMPLEMENATION*/
+
+LEPKFILEIMPL LepkFileStatus lepk_file_create(const char *filepath) {
+	FILE *f = fopen(filepath, "wb");
+	if (f == NULL) {
+		return LEPK_FILE_STATUS_UNABLE_TO_OPEN_CREATE;
+	}
+
+	return LEPK_FILE_STATUS_OK;
+}
+
+LEPKFILEIMPL LepkFileStatus lepk_file_remove(const char *filepath) {
+	if (remove(filepath) != 0) {
+		return LEPK_FILE_STATUS_REMOVE_FAILED;
+	}
+	return LEPK_FILE_STATUS_OK;
+}
+
+LEPKFILEIMPL bool lepk_file_exists(const char *filepath) {
+	return fopen(filepath, "r") != NULL;
+}
+#endif /*LEPK_FILE_IMPLEMENTATION*/
 #endif /* LEPK_FILE_H */
