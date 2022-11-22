@@ -11,7 +11,7 @@ else
 	endif
 endif
 
-.PHONY: test
+.PHONY: test lepkc lepkc-install
 test: compile
 	$(CC) $(CFLAGS) test.c -o test $(IFLAGS) $(LFLAGS)
 	./test
@@ -24,5 +24,5 @@ compile:
 lepkc:
 	$(CC) -std=c99 -pedantic -O3 -Ilibs bins/lepk_compiler.c -o bins/lepkc
 
-lepkc_install:
+lepkc-install:
 	cp -f bins/lepkc /usr/bin/lepkc

@@ -41,7 +41,7 @@
  */
 
 #include "lepk_type.h"
-#define LEPK_FILE_IMPLEMENATION
+#define LEPK_FILE_IMPLEMENTATION
 #include "lepk_file.h"
 #define LEPK_DA_IMPLEMENTATION
 #include "lepk_da.h"
@@ -84,8 +84,8 @@ I32 main(I32 argc, char **argv) {
 	const char *implementation_define = argv[3];
 	const char *output_filepath       = argv[4];
 
-	char *source = lepk_file_read(source_filepath);
-	char *header = lepk_file_read(header_filepath);
+	char *source = lepk_file_read(source_filepath, NULL);
+	char *header = lepk_file_read(header_filepath, NULL);
 
 	/*
 	 * Check if "#pragma once" is present.

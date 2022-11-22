@@ -24,6 +24,16 @@
  * SOFTWARE.
  */
 
+/*
+ * Filesystem interaction.
+ *
+ * Add:
+ *     #define LEPK_FILE_IMPLEMENTATION
+ * in one C or C++ file, before #include "lepk_file.h", to create the implementation.
+ *
+ * If LEPK_FILE_STATIC is defined the implementation will be local to a single file only.
+ */
+
 #ifndef LEPK_FILE_H
 #define LEPK_FILE_H
 
@@ -37,23 +47,37 @@
 
 #include <stdbool.h>
 
+/* How a file should be opened. */
 typedef enum {
+	/* Let windows convert/append some characters. */
 	LEPK_FILE_MODE_NORMAL,
+	/* Keep everything the same. */
 	LEPK_FILE_MODE_BINARY,
 } LepkFileMode;
 
+/* Status code for functions. */
 typedef enum {
+	/* OK. */
 	LEPK_FILE_STATUS_OK,
+	/* File failed to be opened or created. */
 	LEPK_FILE_STATUS_UNABLE_TO_OPEN_CREATE,
+	/* OS is out of memory. */
 	LEPK_FILE_STATUS_OUT_OF_MEMORY,
+	/* Deleting file failed. */
 	LEPK_FILE_STATUS_REMOVE_FAILED,
 } LepkFileStatus;
 
+/* Read file and return its contents. NULL return value means function failed, read status for more specific error. */
 LEPKFILE char *lepk_file_read(const char *filepath, LepkFileStatus *status);
+/* Write content to file at filepath. */
 LEPKFILE LepkFileStatus lepk_file_write(const char *filepath, const char *content, unsigned long length, LepkFileMode mode);
+/* Append conntent to file at filepath. */
 LEPKFILE LepkFileStatus lepk_file_append(const char *filepath, const char *content, unsigned long length, LepkFileMode mode);
+/* Create file at filepath. */
 LEPKFILE LepkFileStatus lepk_file_create(const char *filepath);
+/* Remove file at filepath. */
 LEPKFILE LepkFileStatus lepk_file_remove(const char *filepath);
+/* Check if file exists at filepath. */
 LEPKFILE bool lepk_file_exists(const char *filepath);
 
 #ifdef LEPK_FILE_TEST
