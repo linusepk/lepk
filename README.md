@@ -9,7 +9,7 @@ Everything is written in pedantic C99.
 | Library | Version | Usage |
 | - | - | - |
 | [lepk_da.h](libs/lepk_da.h) | 1.1 | Dynamic arrays. | 
-| [lepk_window.h](libs/lepk_window.h) | 1.2 | Windowing library. |
+| [lepk_window.h](libs/lepk_window.h) | 1.0 | Windowing library. |
 | [lepk_type.h](libs/lepk_type.h) | 1.0 | Generic types and boolean operations. |
 | [lepk_file.h](libs/lepk_file.h) | 1.0 | Interacting with the filesystem. |
 
