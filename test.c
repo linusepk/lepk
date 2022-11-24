@@ -13,15 +13,20 @@
 
 void resize_callback(LepkWindow *window, int width, int height) {
 	(void) window;
-	printf("%d, %d\n", width, height);
+	printf("Resize: %d, %d\n", width, height);
+}
+void key_callback(LepkWindow *window, LepkKey keycode, int scancode, bool pressed, LepkMod mods) {
+	(void) window;
+	printf("Key: %2d, %2d, %2d, %-8s\n", keycode, scancode, mods, pressed ? "pressed" : "released");
 }
 
 int main(void) {
 	lepk_da_test();
 	lepk_file_test();
 
-	LepkWindow *window = lepk_window_create(800, 600, "Linux Window", false);
+	LepkWindow *window = lepk_window_create(800, 600, "Linux Window", true);
 	lepk_window_callback_resize(window, resize_callback);
+	lepk_window_callback_key(window, key_callback);
 
 	while (lepk_window_is_open(window)) {
 		lepk_window_poll_events(window);
