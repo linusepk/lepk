@@ -12,6 +12,7 @@ Everything is written in pedantic C99.
 | [lepk_window.h](libs/lepk_window.h) | 1.0 | Windowing library. |
 | [lepk_type.h](libs/lepk_type.h) | 1.0 | Generic types and boolean operations. |
 | [lepk_file.h](libs/lepk_file.h) | 1.0 | Interacting with the filesystem. |
+| [lepk_ht.h](libs/lepk_ht.h) | 1.0 | Hash tables. |
 
 ## Lepkc
 Lepkc or the lepk compiler is a compiler which takes a header and a source file, combines them into a single header.
