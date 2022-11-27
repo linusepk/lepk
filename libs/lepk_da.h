@@ -104,7 +104,6 @@ LEPKDA void lepk__da_push_array(void **da, const void *array, unsigned int array
 #define lepk_da_insert_array(da, array, array_length, index) do {lepk__da_insert_array((void **) &(da), (array), (array_length), (index));} while (0)
 #define lepk_da_push_array(da, array, array_length) do {lepk__da_push_array((void **) &(da), (array), (array_length));} while (0)
 
-#define LEPK_DA_TEST
 #ifdef LEPK_DA_TEST
 
 #include <string.h>
