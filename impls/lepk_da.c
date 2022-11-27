@@ -67,7 +67,7 @@ LEPKDAIMPL void lepk__da_insert(void **da, const void *data, unsigned int index)
 	head->count++;
 }
 
-LEPKDAIMPL void lepk__da_remove(void **da, unsigned int index) {
+LEPKDAIMPL void lepk__da_remove(void **da, unsigned int index, void *output) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -79,6 +79,11 @@ LEPKDAIMPL void lepk__da_remove(void **da, unsigned int index) {
 	}
 
 	Lepk__U8 *ptr_da = *da;
+
+	/* Copy removed data into output. */
+	if (output != NULL) {
+		memcpy(output, ptr_da + index * head->size, head->size);
+	}
 
 	/* Resize */
 	if (head->count == head->cap / 2 && head->cap != LEPK_DA_START_CAP) {
@@ -131,7 +136,7 @@ LEPKDAIMPL void lepk__da_insert_fast(void **da, const void *data, unsigned int i
 	head->count++;
 }
 
-LEPKDAIMPL void lepk__da_remove_fast(void **da, unsigned int index) {
+LEPKDAIMPL void lepk__da_remove_fast(void **da, unsigned int index, void *output) {
 	assert(da != NULL && "Dynamic array pointer can't be NULL.");
 	assert(*da != NULL && "Dynamic array can't be NULL.");
 
@@ -143,6 +148,11 @@ LEPKDAIMPL void lepk__da_remove_fast(void **da, unsigned int index) {
 	}
 
 	Lepk__U8 *ptr_da = *da;
+
+	/* Copy removed data into output. */
+	if (output != NULL) {
+		memcpy(output, ptr_da + (index) * head->size, head->size);
+	}
 
 	/* Resize */
 	if (head->count == head->cap / 2 && head->cap != LEPK_DA_START_CAP) {
