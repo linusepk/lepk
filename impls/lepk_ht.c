@@ -50,7 +50,7 @@ static Lepk__HtEntry *lepk__ht_find_entry(Lepk__HtEntry *entires, LepkHtCompare 
 			return entry;
 		}
 
-		index += (index + 1) % cap;
+		index += (index + 1) & (cap - 1);
 	}
 }
 
@@ -148,6 +148,7 @@ LEPKHT void lepk__ht_remove(LepkHt *table, const void *key, void *output) {
 		memcpy(output, entry->data, table->data_size);
 	}
 	entry->dead = true;
+	table->count--;
 }
 
 unsigned long lepk_ht_hash_string(const void *key) {
