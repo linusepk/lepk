@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
 
 #undef LEPKHT
 #ifndef LEPK_HT_STATIC
@@ -32,8 +33,8 @@ struct LepkHt {
 	Lepk__HtEntry *entires;
 };
 
-static Lepk__HtEntry *lepk__ht_find_entry(Lepk__HtEntry *entires, LepkHtCompare compare, unsigned long hash, unsigned long cap, const void *key) {
-	unsigned long index = hash % cap;
+static Lepk__HtEntry *lepk__ht_find_entry(Lepk__HtEntry *entires, LepkHtCompare compare, unsigned long hash, unsigned long cap, const void *key, unsigned long key_size) {
+	size_t index = hash % cap;
 	Lepk__HtEntry *entry = &entires[index];
 
 	/* No entry at index. */
@@ -44,13 +45,14 @@ static Lepk__HtEntry *lepk__ht_find_entry(Lepk__HtEntry *entires, LepkHtCompare 
 	/* Entry at current location. */
 	for (;;) {
 		entry = &entires[index];
+		/* printf("%s\n", entry->dead ? "dead" : "alive"); */
 
 		/* Found entry with same key or an empty slot. */
-		if (entry->dead || compare(key, entry->key) == 0) {
+		if (entry->dead || compare(key, entry->key, key_size) == 0) {
 			return entry;
 		}
 
-		index += (index + 1) & (cap - 1);
+		index = (index + 1) & (cap - 1);
 	}
 }
 
@@ -106,7 +108,7 @@ LEPKHT void lepk__ht_set(LepkHt *table, const void *key, const void *data) {
 		for (size_t i = 0; i < table->cap; i++) {
 			Lepk__HtEntry *entry = &table->entires[i];
 			if (!entry->dead) {
-				Lepk__HtEntry *new_entry = lepk__ht_find_entry(new_entires, table->compare, entry->hash, new_cap, entry->key);
+				Lepk__HtEntry *new_entry = lepk__ht_find_entry(new_entires, table->compare, entry->hash, new_cap, entry->key, table->key_size);
 				memcpy(new_entry, entry, sizeof(Lepk__HtEntry));
 			}
 		}
@@ -116,8 +118,8 @@ LEPKHT void lepk__ht_set(LepkHt *table, const void *key, const void *data) {
 		table->entires = new_entires;
 	}
 
-	unsigned long hash = table->hash(key);
-	Lepk__HtEntry *entry = lepk__ht_find_entry(table->entires, table->compare, hash, table->cap, key);
+	size_t hash = table->hash(key, table->key_size);
+	Lepk__HtEntry *entry = lepk__ht_find_entry(table->entires, table->compare, hash, table->cap, key, table->key_size);
 	if (entry->dead) {
 		table->count++;
 	}
@@ -132,7 +134,7 @@ LEPKHT void lepk__ht_set(LepkHt *table, const void *key, const void *data) {
 
 LEPKHT void lepk__ht_get(LepkHt *table, const void *key, void *output) {
 	assert(output != NULL && "Output pointer can't be NULL.");
-	Lepk__HtEntry *entry = lepk__ht_find_entry(table->entires, table->compare, table->hash(key), table->cap, key);
+	Lepk__HtEntry *entry = lepk__ht_find_entry(table->entires, table->compare, table->hash(key, table->key_size), table->cap, key, table->key_size);
 	if (entry->dead) {
 		return;
 	}
@@ -140,7 +142,7 @@ LEPKHT void lepk__ht_get(LepkHt *table, const void *key, void *output) {
 }
 
 LEPKHT void lepk__ht_remove(LepkHt *table, const void *key, void *output) {
-	Lepk__HtEntry *entry = lepk__ht_find_entry(table->entires, table->compare, table->hash(key), table->cap, key);
+	Lepk__HtEntry *entry = lepk__ht_find_entry(table->entires, table->compare, table->hash(key, table->key_size), table->cap, key, table->key_size);
 	if (entry->dead) {
 		return;
 	}
@@ -151,7 +153,8 @@ LEPKHT void lepk__ht_remove(LepkHt *table, const void *key, void *output) {
 	table->count--;
 }
 
-unsigned long lepk_ht_hash_string(const void *key) {
+LEPKHT unsigned long lepk_ht_hash_string(const void *key, unsigned long size) {
+	(void) size;
 	const char *_key = key;
 	unsigned long len = strlen(_key);
 	unsigned long hash = 2166136261lu;
@@ -162,6 +165,20 @@ unsigned long lepk_ht_hash_string(const void *key) {
 	return hash;
 }
 
-int lepk_ht_compare_string(const void *a, const void *b) {
+LEPKHT int lepk_ht_compare_string(const void *a, const void *b, unsigned long size) {
+	(void) size;
 	return strcmp((const char *) a, (const char *) b);
+}
+
+LEPKHT unsigned long lepk_ht_hash_generic(const void *key, unsigned long size) {
+	size_t hash = 2166136261lu;
+	for (size_t i = 0; i < size; i++) {
+		hash ^= *(uint8_t *) key + i;
+		hash *= 16777619;
+	}
+	return hash;
+}
+
+LEPKHT int lepk_ht_compare_generic(const void *a, const void *b, unsigned long size) {
+	return memcmp(a, b, size);
 }

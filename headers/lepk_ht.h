@@ -46,9 +46,9 @@
 /* Hash Table. */
 typedef struct LepkHt LepkHt;
 /* Hasing function. */
-typedef unsigned long (*LepkHtHash)(const void *key);
+typedef unsigned long (*LepkHtHash)(const void *key, unsigned long size);
 /* Compare funciton. */
-typedef int (*LepkHtCompare)(const void *a, const void *b);
+typedef int (*LepkHtCompare)(const void *a, const void *b, unsigned long size);
 
 /* Create a hash table. */
 LEPKHT LepkHt *lepk_ht_create(LepkHtHash hash, LepkHtCompare compare, unsigned long key_size, unsigned long data_size);
@@ -66,9 +66,13 @@ LEPKHT void lepk__ht_get(LepkHt *table, const void *key, void *output);
 LEPKHT void lepk__ht_remove(LepkHt *table, const void *key, void *output);
 
 /* Pre-written hashing function for strings. */
-LEPKHT unsigned long lepk_ht_hash_string(const void *key);
+LEPKHT unsigned long lepk_ht_hash_string(const void *key, unsigned long size);
+/* Pre-written generic hashing function for any type of data structure. */
+LEPKHT unsigned long lepk_ht_hash_generic(const void *key, unsigned long size);
 /* Pre-written compare function for strings. */
-LEPKHT int lepk_ht_compare_string(const void *a, const void *b);
+LEPKHT int lepk_ht_compare_string(const void *a, const void *b, unsigned long size);
+/* Pre-written generic compare function for any type of data structure. */
+LEPKHT int lepk_ht_compare_generic(const void *a, const void *b, unsigned long size);
 
 #define lepk_ht_set(table, key, data) do { __typeof__(key) lepk__ht_temp_key = key; __typeof__(data) lepk__ht_temp_data = data; lepk__ht_set(table, &lepk__ht_temp_key, &lepk__ht_temp_data); } while (0)
 #define lepk_ht_get(table, key, output) do { __typeof__(key) lepk__ht_temp_key = key; lepk__ht_get(table, &lepk__ht_temp_key, output); } while (0)
