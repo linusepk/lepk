@@ -214,7 +214,7 @@ LEPKDAIMPL void lepk__da_insert(void **da, const void *data, unsigned int index)
 	}
 
 	/* Resize */
-	if (head->count == head->cap) {
+	if (head->count + 1 == head->cap) {
 		head->cap *= 2;
 		Lepk__DaHeader *realloced_head = realloc(head, head->cap * head->size + sizeof(Lepk__DaHeader));
 		if (realloced_head == NULL) {
