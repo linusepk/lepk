@@ -34,6 +34,11 @@
  * If LEPK_HT_STATIS is defined the implementation will be local to a single file only.
  */
 
+/*
+ * TODO: ACTUALLY MAKE THE THING WORK.
+ * Currently, when getting an entry, if it collided and the object at the original collision point has been removed a dead entry is returned instead of the actual entry.
+ */
+
 #ifndef LEPK_HT_H
 #define LEPK_HT_H
 
